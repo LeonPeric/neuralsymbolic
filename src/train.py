@@ -158,7 +158,7 @@ def train_simple(
         metrics["test_accuracy_sum"][epoch] = correct_sum / total_test
         metrics["test_accuracy_digit"][epoch] = correct_digits / (2 * len(test_loader))
 
-        if verbose:
+        if verbose and epoch == n_epochs - 1:
             print(
                 f"Epoch {epoch+1} | "
                 f"Train Loss: {total_loss:.4f}, "

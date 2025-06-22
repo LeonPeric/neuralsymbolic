@@ -62,6 +62,7 @@ class SingleDigitClassifier(torch.nn.Module):
 
     def __init__(self, layers_sizes=(100, 84, 10)):
         super(SingleDigitClassifier, self).__init__()
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.mnistconv = (
             MNISTConv()
         )  # this is the convolutional part of the architecture
