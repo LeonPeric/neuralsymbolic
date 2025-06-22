@@ -334,7 +334,7 @@ def train_logic(
         metrics["test_accuracy_sum"][epoch] = correct_sum / len(test_loader)
         metrics["test_accuracy_digit"][epoch] = correct_digits / (2 * total)
 
-        if verbose:
+        if verbose and epoch == n_epochs - 1:
             print(
                 f"Epoch {epoch+1:02d} | "
                 f"Train Sat: {metrics['sat'][epoch]:.3f} | "
