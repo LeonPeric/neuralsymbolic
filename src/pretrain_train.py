@@ -10,12 +10,17 @@ from train import train_logic, train_simple
 from utils import plot_training_progression
 import pickle as pkl
 
+# torch ignore depreciation warnings
+import warnings
+
+warnings.filterwarnings("ignore")
+
 metrics_of_runs_logic = []
 metrics_of_runs_pretrain = []
 
-for i in range(2):
+for i in [1,5,7]:
+    
 
-    print("======= Run {} =======".format(i))
     if torch.cuda.is_available():
         torch.cuda.manual_seed(i)
         torch.cuda.manual_seed_all(i)
@@ -47,6 +52,8 @@ for i in range(2):
     N_PRETRAIN_EPOCHS = 1
     N_EPOCHS = 1
 
+    print("======= Running Seed: {} =======".format(i))
+
     print("Starting pretraining for {} epochs.".format(N_PRETRAIN_EPOCHS))
     pretrain_metrics, pretrained_model = train_simple(
         cnn_s_d,
@@ -57,6 +64,7 @@ for i in range(2):
         verbose=True,
         return_model=True,
         save_model=False,
+        num_batches=100,
     )
 
     optimizer = torch.optim.Adam(pretrained_model.parameters(), lr=0.001)

@@ -16,6 +16,7 @@ def train_simple(
     verbose=False,
     return_model=False,
     save_model=False,
+    num_batches=None,
 ):
     """
     Trains a neural model on digit addition using weak supervision from sum labels.
@@ -36,10 +37,6 @@ def train_simple(
     """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        
-    if verbose:
-        print(f"Using device: {device}")
-        
     metrics = {
         "loss": np.full([n_epochs], np.nan),
         "test_loss": np.full([n_epochs], np.nan),
@@ -50,6 +47,12 @@ def train_simple(
 
     mse_loss = torch.nn.MSELoss()
     digit_range = torch.arange(10).float().to(device)  # for expected value
+
+    if num_batches is not None:
+        num_all_batches = len(train_loader)
+        train_loader = [x for _, x in enumerate(train_loader) if _ < num_batches]
+        n_epochs = 1
+        print(f"Using {num_batches} (out of {num_all_batches}) batches")
 
     for epoch in range(n_epochs):
         model.train()
@@ -227,9 +230,6 @@ def train_logic(
         dict: Metrics dictionary including accuracy and satisfaction rates.
     """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    if verbose:
-        print(f"Using device: {device}")
     metrics = {
         "loss": np.full([n_epochs], np.nan),
         "test_loss": np.full([n_epochs], np.nan),
