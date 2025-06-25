@@ -347,3 +347,92 @@ def train_logic(
             )
 
     return metrics
+
+
+
+# THIS FUNCTION IS USED IN THE GRAD NORM EXPERIMENT
+def train_logic_one_epoch(model,
+                          optimizer,
+                          train_loader,
+                          And, Exists, Forall,
+                          device,
+                          verbose=False):
+    """
+    Trains for exactly one epoch, collecting:
+      - metrics: dict of averaged loss, sat, sum‐accuracy
+      - grad_norms: list of gradient norms per minibatch
+
+    Returns:
+        metrics (dict), grad_norms (list of float)
+    """
+    # Prepare metric accumulators
+    total_loss = 0.0
+    total_sat  = 0.0
+    correct_sum = 0.0
+    total_batches = len(train_loader)
+    grad_norms = []
+
+    d_1 = ltn.Variable("d_1", torch.tensor(range(10)))
+    d_2 = ltn.Variable("d_2", torch.tensor(range(10)))
+
+    model.train()
+    for batch_idx, (operand_images, sum_label, _) in enumerate(train_loader):
+        operand_images = operand_images.to(device)
+        sum_label      = sum_label.to(device)
+
+        # wrap into LTN variables
+        images_x = ltn.Variable("x", operand_images[:, 0])
+        images_y = ltn.Variable("y", operand_images[:, 1])
+        labels_z = ltn.Variable("z", sum_label)
+
+        optimizer.zero_grad()
+
+        # compute satisfaction aggregate
+        sat_agg = Forall(
+            ltn.diag(images_x, images_y, labels_z),
+            Exists(
+                vars=[d_1, d_2],
+                formula=And(model(images_x, d_1),
+                            model(images_y, d_2)),
+                cond_vars=[d_1, d_2, labels_z],
+                cond_fn=lambda d1, d2, z: torch.eq(d1.value + d2.value, z.value),
+            )
+        ).value
+
+        loss = 1.0 - sat_agg
+        loss.backward()
+
+        # record gradient norm
+        total_norm_sq = 0.0
+        for p in model.parameters():
+            if p.grad is not None:
+                total_norm_sq += p.grad.data.norm(2).item() ** 2
+        grad_norms.append(np.sqrt(total_norm_sq))
+
+        optimizer.step()
+
+        # accumulate for epoch‐level metrics
+        total_loss += loss.item()
+        total_sat  += sat_agg.item()
+
+        # sum‐accuracy
+        out1 = torch.argmax(model.model.logits_model(operand_images[:, 0]), dim=1)
+        out2 = torch.argmax(model.model.logits_model(operand_images[:, 1]), dim=1)
+        predictions = out1 + out2
+        batch_acc = (predictions == sum_label).float().mean().item()
+        correct_sum += batch_acc
+
+    # build the metrics dict
+    metrics = {
+        "loss":           total_loss  / total_batches,
+        "sat":            total_sat   / total_batches,
+        "accuracy_sum":   correct_sum / total_batches,
+    }
+
+    if verbose:
+        print(f"One-Epoch Summary | "
+              f"Train Sat: {metrics['sat']:.3f} | "
+              f"Train Loss: {metrics['loss']:.4f} | "
+              f"Train Sum Acc: {metrics['accuracy_sum']*100:.2f}%")
+
+    return metrics, grad_norms
