@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 import ltn
+import warnings
 
 from dataset import DataLoader, get_mnist_dataset_for_digits_addition
 from logic import Stable_AND
@@ -11,14 +12,12 @@ from utils import plot_training_progression
 import pickle as pkl
 
 # torch ignore depreciation warnings
-import warnings
-
 warnings.filterwarnings("ignore")
 
 metrics_of_runs_logic = []
 metrics_of_runs_pretrain = []
 
-for i in [1,5,7]:
+for i in range(1000):
     
 
     if torch.cuda.is_available():
@@ -51,6 +50,7 @@ for i in [1,5,7]:
 
     N_PRETRAIN_EPOCHS = 1
     N_EPOCHS = 1
+    NUM_BATCHES = 100
 
     print("======= Running Seed: {} =======".format(i))
 
@@ -64,7 +64,7 @@ for i in [1,5,7]:
         verbose=True,
         return_model=True,
         save_model=False,
-        num_batches=100,
+        num_batches=NUM_BATCHES,
     )
 
     optimizer = torch.optim.Adam(pretrained_model.parameters(), lr=0.001)
@@ -98,12 +98,12 @@ for i in [1,5,7]:
 
 print("Saving metrics...")
 
-with open("metrics_of_runs_pretrain.pkl", "wb") as f:
+with open("metrics_of_runs_pretrain_100_batches.pkl", "wb") as f:
     pkl.dump(metrics_of_runs_pretrain, f)
 
-print("Saved metrics_of_runs_pretrain.pkl")
+print("Saved metrics_of_runs_pretrain_100_batches.pkl")
 
-with open("metrics_of_runs_logic.pkl", "wb") as f:
+with open("metrics_of_runs_logic_100_batches.pkl", "wb") as f:
     pkl.dump(metrics_of_runs_logic, f)
 
-print("Saved metrics_of_runs_logic.pkl")
+print("Saved metrics_of_runs_logic_100_batches.pkl")
