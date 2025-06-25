@@ -1,9 +1,11 @@
-#SBATCH --partition=gpu_a100
-#SBATCH --gpus=1
-#SBATCH --job-name=InstallEnvironment
+#!/bin/bash
+#SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=18
+#SBATCH --gpus=1
+#SBATCH --partition=gpu_a100
 #SBATCH --time=06:00:00
+#SBATCH --job-name=gradNorm
 #SBATCH --output=slurm_output_%A.out
 
 module purge
