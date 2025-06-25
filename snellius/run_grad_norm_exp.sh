@@ -12,12 +12,10 @@ module purge
 module load 2023
 module load Anaconda3/2023.07-2
 
-source activate eiai2025
-
 cd $HOME/neuralsymbolic
 
-echo "Running gradient norm experiment script..."
+echo "Running gradient norm experiment script with env‐specific Python..."
+# direct call to env's Python
+/home/dlindberg/.conda/envs/eiai2025/bin/python src/grad_norm_exp.py
 
-python src/grad_norm_exp.py
-
-echo "Experiment completed. Check the output files for results."
+echo "Experiment completed."
