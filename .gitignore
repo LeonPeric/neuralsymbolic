@@ -1,3 +1,5 @@
 datasets/*
 src/datasets/*
 */__pycache__/*
+.DS_Store
+*.pkl
