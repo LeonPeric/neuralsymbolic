@@ -3,10 +3,20 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from ltn.fuzzy_ops import ConnectiveOperator
+from models import LogitsToPredicate, SingleDigitClassifier
+import os
 
 
 def train_simple(
-    model, optimizer, train_loader, test_loader, n_epochs=10, verbose=False
+    model,
+    optimizer,
+    train_loader,
+    test_loader,
+    n_epochs=10,
+    verbose=False,
+    return_model=False,
+    save_model=False,
+    num_batches=None,
 ):
     """
     Trains a neural model on digit addition using weak supervision from sum labels.
@@ -26,6 +36,7 @@ def train_simple(
         dict: Dictionary of tracked metrics per epoch.
     """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
     metrics = {
         "loss": np.full([n_epochs], np.nan),
         "test_loss": np.full([n_epochs], np.nan),
@@ -36,6 +47,12 @@ def train_simple(
 
     mse_loss = torch.nn.MSELoss()
     digit_range = torch.arange(10).float().to(device)  # for expected value
+
+    if num_batches is not None:
+        num_all_batches = len(train_loader)
+        train_loader = [x for _, x in enumerate(train_loader) if _ < num_batches]
+        n_epochs = 1
+        print(f"Using {num_batches} (out of {num_all_batches}) batches")
 
     for epoch in range(n_epochs):
         model.train()
@@ -168,6 +185,17 @@ def train_simple(
                 f"Test Digit Acc: {metrics['test_accuracy_digit'][epoch]*100:.2f}%"
             )
 
+    # save model
+    if save_model:
+        print(f"Saving model to models/{model.__class__.__name__}.pth")
+        # check if models folder exists, if not create it
+        if not os.path.exists("models"):
+            os.makedirs("models")
+        torch.save(model.state_dict(), f"models/{model.__class__.__name__}.pth")
+
+    if return_model:
+        return metrics, model
+
     return metrics
 
 
@@ -181,6 +209,8 @@ def train_logic(
     Forall,
     n_epochs=30,
     verbose=False,
+    save_model=False,
+    start_epoch=0,
 ):
     """
     Trains a model using Logic Tensor Networks (LTN) with symbolic constraints.
@@ -336,7 +366,7 @@ def train_logic(
 
         if verbose and epoch == n_epochs - 1:
             print(
-                f"Epoch {epoch+1:02d} | "
+                f"Epoch {start_epoch + epoch+1:02d} | "
                 f"Train Sat: {metrics['sat'][epoch]:.3f} | "
                 f"Train Loss: {metrics['loss'][epoch]:.4f} | "
                 f"Train Sum Acc: {metrics['accuracy_sum'][epoch]*100:.2f}% | "
@@ -345,6 +375,9 @@ def train_logic(
                 f"Test Sum Acc: {metrics['test_accuracy_sum'][epoch]*100:.2f}% | "
                 f"Test Digit Acc: {metrics['test_accuracy_digit'][epoch]*100:.2f}%"
             )
+
+    if save_model:
+        torch.save(model.state_dict(), "trained_model.pth")
 
     return metrics
 
